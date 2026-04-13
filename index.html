@@ -1,58 +1,708 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nguyen Minh Dao — Backend Developer</title>
+  <meta name="description" content="Backend Developer at Diko Vina. Java, Spring Boot, Microservices. Java & Python Instructor at FullHouseDev."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #030408;
+      --surface: #0a0e17;
+      --border: #141c2e;
+      --accent: #00d4ff;
+      --accent2: #7b61ff;
+      --accent3: #00ff94;
+      --text: #8b97b5;
+      --dim: #3d4663;
+      --white: #e2e8f5;
+    }
 
-// ═══════════════════ THEME ═══════════════════
-const C = {
-  bg: "#030408",
-  surface: "#0a0e17",
-  border: "#141c2e",
-  accent: "#00d4ff",
-  accent2: "#7b61ff",
-  accent3: "#00ff94",
-  text: "#8b97b5",
-  dim: "#3d4663",
-  white: "#e2e8f5",
-  glow: "0 0 20px #00d4ff44, 0 0 60px #00d4ff11",
-  glowStrong: "0 0 20px #00d4ff66, 0 0 80px #00d4ff22, 0 0 120px #00d4ff11",
-};
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+    ::selection { background: #00d4ff33; color: var(--white); }
+    a { color: var(--accent); text-decoration: none; transition: opacity 0.2s; }
+    a:hover { opacity: 0.75; }
 
-// ═══════════════════ PARTICLE CANVAS ═══════════════════
-function ParticleField() {
-  const canvasRef = useRef(null);
-  const particles = useRef([]);
-  const mouse = useRef({ x: -1000, y: -1000 });
-  const raf = useRef();
+    /* Scanline overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(3,4,8,0.03) 2px, rgba(3,4,8,0.03) 4px);
+    }
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Section label */
+    .section-label {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 48px;
+    }
+    .section-label .comment { opacity: 0.4; }
+
+    /* Animations */
+    @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+    @keyframes cursorBlink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: none; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Hero */
+    #hero {
+      min-height: 100vh;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 clamp(24px, 8vw, 140px);
+    }
+    #hero canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero-dots {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--dim);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: fadeUp 0.6s ease 0.3s both;
+    }
+    .hero-dots .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    .hero-name {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(52px, 9vw, 110px);
+      font-weight: 400;
+      color: var(--white);
+      line-height: 1;
+      margin-bottom: 8px;
+      animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.5s both;
+    }
+    .hero-name .gradient {
+      font-style: italic;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Glitch */
+    .glitch {
+      position: relative;
+      display: inline-block;
+    }
+    .glitch.active::before,
+    .glitch.active::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: inherit;
+      color: inherit;
+    }
+    .glitch.active::before {
+      color: var(--accent);
+      clip-path: inset(20% 0 40% 0);
+      transform: translate(2px, -2px);
+      opacity: 0.7;
+    }
+    .glitch.active::after {
+      color: var(--accent2);
+      clip-path: inset(50% 0 10% 0);
+      transform: translate(-2px, 2px);
+      opacity: 0.7;
+    }
+
+    .hero-typing {
+      margin-top: 20px;
+      font-size: 15px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--dim);
+      animation: fadeIn 0.6s ease 1.2s both;
+    }
+    .hero-typing .prompt { color: var(--accent); }
+    .typing-cursor {
+      color: var(--accent);
+      animation: cursorBlink 1.06s step-end infinite;
+    }
+
+    .hero-bio {
+      max-width: 500px;
+      margin-top: 32px;
+      font-size: 15px;
+      color: var(--text);
+      line-height: 1.8;
+      animation: fadeUp 0.8s ease 1s both;
+    }
+    .hero-bio a { border-bottom: 1px solid rgba(0,212,255,0.25); }
+
+    .hero-buttons {
+      margin-top: 40px;
+      display: flex;
+      gap: 12px;
+      animation: fadeIn 0.8s ease 1.4s both;
+    }
+    .hero-btn {
+      padding: 10px 24px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 1px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+    .hero-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 20px rgba(0,212,255,0.08);
+      opacity: 1;
+    }
+
+    .scroll-line {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1px;
+      height: 50px;
+      background: linear-gradient(to bottom, transparent, var(--accent));
+      animation: pulse 2s ease-in-out infinite;
+      opacity: 0;
+      animation: pulse 2s ease-in-out infinite, fadeIn 1s ease 2.5s both;
+    }
+
+    /* Floating boxes */
+    .float-boxes {
+      position: absolute;
+      top: 10%;
+      right: 8%;
+      width: 300px;
+      height: 300px;
+      pointer-events: none;
+      opacity: 0.25;
+      transform: rotate(12deg);
+      transition: transform 0.3s;
+    }
+    .float-boxes div {
+      position: absolute;
+      border: 1px solid;
+      border-radius: 4px;
+    }
+    .float-boxes .b1 { inset: 0; border-color: rgba(0,212,255,0.07); }
+    .float-boxes .b2 { inset: 20px; border-color: rgba(123,97,255,0.07); }
+    .float-boxes .b3 { inset: 40px; border-color: rgba(0,255,148,0.07); }
+
+    /* Sections */
+    .section { padding: 80px clamp(24px, 8vw, 140px) 100px; position: relative; }
+    .section--surface {
+      background: linear-gradient(180deg, var(--surface), var(--bg));
+      border-top: 1px solid var(--border);
+    }
+
+    /* Experience */
+    .exp-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .exp-left { display: flex; align-items: center; gap: 14px; }
+    .exp-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+    }
+    .exp-dot--active {
+      background: var(--accent3);
+      box-shadow: 0 0 8px rgba(0,255,148,0.53);
+      animation: pulse 2s ease infinite;
+    }
+    .exp-dot--inactive { background: var(--dim); }
+    .exp-role { color: var(--white); font-weight: 500; }
+    .exp-company { color: var(--dim); font-size: 12px; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+    .exp-period { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--dim); }
+
+    /* Skills grid */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 48px 40px;
+    }
+    .skill-category {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 2px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .skill-category .icon { opacity: 0.5; }
+    .skill-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .skill-chip {
+      padding: 8px 18px;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      border-radius: 4px;
+      cursor: default;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .skill-chip::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--chip-color), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .skill-chip:hover::before { opacity: 1; }
+    .skill-chip:hover {
+      color: var(--white) !important;
+      box-shadow: 0 0 15px color-mix(in srgb, var(--chip-color) 15%, transparent), inset 0 0 15px color-mix(in srgb, var(--chip-color) 5%, transparent);
+    }
+
+    /* Practices */
+    .practices { margin-top: 64px; padding-top: 40px; border-top: 1px solid var(--border); }
+    .practice-chip {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      border-radius: 3px;
+      color: var(--dim);
+      border: 1px dashed var(--border);
+      transition: all 0.3s;
+      display: inline-block;
+      margin: 0 8px 8px 0;
+    }
+    .practice-chip:hover {
+      border-color: rgba(0,212,255,0.25);
+      color: var(--text);
+    }
+
+    /* Glow orb */
+    .glow-orb {
+      position: absolute;
+      width: 400px; height: 400px;
+      border-radius: 50%;
+      filter: blur(60px);
+      pointer-events: none;
+    }
+
+    /* Projects */
+    .project-card {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: 32px;
+      padding: 48px 24px;
+      margin-bottom: 16px;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s;
+    }
+    .project-card:hover {
+      box-shadow: 0 0 40px color-mix(in srgb, var(--card-color) 7%, transparent);
+    }
+    .project-card .top-line {
+      position: absolute;
+      top: 0; left: 0;
+      width: 30%; height: 1px;
+    }
+    .project-num {
+      font-family: 'Instrument Serif', serif;
+      font-size: 56px;
+      opacity: 0.25;
+      line-height: 1;
+    }
+    .project-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: 26px;
+      font-weight: 400;
+      color: var(--white);
+    }
+    .project-level {
+      font-size: 9px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 3px 10px;
+      border-radius: 3px;
+      letter-spacing: 1.5px;
+      display: inline-block;
+      margin-left: 14px;
+      vertical-align: middle;
+    }
+    .project-desc {
+      color: var(--text);
+      max-width: 540px;
+      margin: 10px 0 20px;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .project-stack { display: flex; flex-wrap: wrap; gap: 6px; }
+    .project-tag {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 3px 10px;
+      border-radius: 3px;
+      color: var(--dim);
+      border: 1px solid var(--border);
+    }
+
+    /* Footer */
+    .footer {
+      padding: 80px clamp(24px, 8vw, 140px) 40px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      position: relative;
+    }
+    .footer-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(32px, 5vw, 52px);
+      color: var(--white);
+      margin-bottom: 12px;
+    }
+    .footer-title .gradient {
+      font-style: italic;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .footer-email {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--dim);
+    }
+    .footer-copy {
+      margin-top: 60px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--dim);
+      opacity: 0.3;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .skills-grid { grid-template-columns: repeat(2, 1fr); gap: 32px 24px; }
+      .project-card { grid-template-columns: 60px 1fr; gap: 16px; padding: 32px 16px; }
+      .project-num { font-size: 40px; }
+      .float-boxes { display: none; }
+      .exp-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+    }
+    @media (max-width: 480px) {
+      .skills-grid { grid-template-columns: 1fr; }
+      .hero-buttons { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ HERO ═══ -->
+  <section id="hero">
+    <canvas id="particles"></canvas>
+    <div class="float-boxes" id="floatBoxes">
+      <div class="b1"></div><div class="b2"></div><div class="b3"></div>
+    </div>
+
+    <div style="position:relative;z-index:2;">
+      <div class="hero-dots">
+        <span class="dot" style="background:var(--accent3)"></span>
+        <span class="dot" style="background:var(--accent)"></span>
+        <span class="dot" style="background:var(--accent2)"></span>
+        <span style="margin-left:8px">~/nguyen-minh-dao</span>
+      </div>
+
+      <h1 class="hero-name">
+        <span class="glitch" data-text="Minh">Minh</span> <span class="gradient">Dao</span>
+      </h1>
+
+      <div class="hero-typing">
+        <span class="prompt">$ </span><span id="typingTarget"></span><span class="typing-cursor">▎</span>
+      </div>
+
+      <p class="hero-bio">
+        Building production systems at Diko Vina.
+        Teaching Java &amp; Python at <a href="https://fullhousedev.com/" target="_blank">FullHouseDev</a>.
+        <br/>PTIT Engineering graduate.
+      </p>
+
+      <div class="hero-buttons">
+        <a class="hero-btn" href="https://github.com/minhdao-dev" target="_blank">GitHub</a>
+        <a class="hero-btn" href="https://linkedin.com/in/dao-nguyen-minh" target="_blank">LinkedIn</a>
+        <a class="hero-btn" href="mailto:daonguyenminh.it@gmail.com">Email</a>
+      </div>
+    </div>
+
+    <div class="scroll-line"></div>
+  </section>
+
+  <!-- ═══ EXPERIENCE ═══ -->
+  <section class="section">
+    <div class="section-label reveal"><span class="comment">// </span>Experience</div>
+
+    <div class="reveal" style="transition-delay:0.1s">
+      <div class="exp-row">
+        <div class="exp-left">
+          <div class="exp-dot exp-dot--active"></div>
+          <div><div class="exp-role">Backend Developer</div><div class="exp-company">Diko Vina</div></div>
+        </div>
+        <div class="exp-period">Jul 2025 — Present</div>
+      </div>
+    </div>
+    <div class="reveal" style="transition-delay:0.2s">
+      <div class="exp-row">
+        <div class="exp-left">
+          <div class="exp-dot exp-dot--active"></div>
+          <div><div class="exp-role">Java & Python Instructor</div><div class="exp-company">FullHouseDev</div></div>
+        </div>
+        <div class="exp-period">2024 — Present</div>
+      </div>
+    </div>
+    <div class="reveal" style="transition-delay:0.3s">
+      <div class="exp-row">
+        <div class="exp-left">
+          <div class="exp-dot exp-dot--inactive"></div>
+          <div><div class="exp-role">Backend Intern (.NET)</div><div class="exp-company">FPT Information System</div></div>
+        </div>
+        <div class="exp-period">Jan — Apr 2025</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TECH STACK ═══ -->
+  <section class="section section--surface" id="techSection">
+    <div class="glow-orb" style="top:-100px;right:20%;background:radial-gradient(circle,rgba(0,212,255,0.03),transparent 70%)"></div>
+
+    <div class="section-label reveal"><span class="comment">// </span>Tech Stack</div>
+
+    <div class="skills-grid" id="skillsGrid"></div>
+
+    <div class="practices reveal" style="transition-delay:0.4s">
+      <div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--dim);margin-bottom:16px;letter-spacing:2px">
+        <span style="opacity:0.4">// </span>ARCHITECTURE & PRACTICES
+      </div>
+      <div id="practicesContainer"></div>
+    </div>
+  </section>
+
+  <!-- ═══ PROJECTS ═══ -->
+  <section class="section">
+    <div class="section-label reveal"><span class="comment">// </span>Projects</div>
+    <div id="projectsContainer"></div>
+  </section>
+
+  <!-- ═══ FOOTER ═══ -->
+  <section class="footer">
+    <div class="glow-orb" style="bottom:0;left:50%;transform:translateX(-50%);width:400px;height:200px;background:radial-gradient(circle,rgba(0,212,255,0.04),transparent 70%);filter:blur(40px)"></div>
+    <div class="reveal">
+      <div class="footer-title">Let's <span class="gradient">connect</span></div>
+      <div class="footer-email">daonguyenminh.it@gmail.com</div>
+    </div>
+    <div class="footer-copy">© 2026 Nguyen Minh Dao — Built with Java spirit & pixel precision</div>
+  </section>
+
+  <script>
+    // ═══ DATA ═══
+    const skillGroups = [
+      { category: "LANGUAGES", items: ["Java 17+","C#","Python","SQL"], color: "#00d4ff", icon: "⟩_" },
+      { category: "BACKEND", items: ["Spring Boot 3","Spring Security","Spring Cloud","Spring AI","Hibernate/JPA","ASP.NET Core"], color: "#00ff94", icon: "{}" },
+      { category: "DATABASE", items: ["PostgreSQL","MySQL","MongoDB","Redis"], color: "#7b61ff", icon: "⊞" },
+      { category: "MESSAGING", items: ["Apache Kafka","RabbitMQ","WebSocket"], color: "#ff6b6b", icon: "⇌" },
+      { category: "DEVOPS", items: ["Docker","Kubernetes","GitHub Actions","CI/CD","Linux"], color: "#ffa64d", icon: "◈" },
+      { category: "TESTING", items: ["JUnit 5","Mockito","TestContainers"], color: "#4dc9f6", icon: "✓" },
+    ];
+
+    const practices = [
+      "Microservices","Event-Driven","Saga Pattern","REST API",
+      "SOLID","Design Patterns","Clean Architecture","Circuit Breaker",
+      "Distributed Tracing","Flyway","Swagger/OpenAPI","SOAP/XML",
+    ];
+
+    const projects = [
+      {
+        num: "01", title: "Online Booking Platform", level: "MONOLITH",
+        desc: "Hệ thống đặt lịch xử lý race condition thực tế — pessimistic/optimistic locking, transaction safety, scheduling tự động.",
+        stack: ["Spring Boot","Spring Security","PostgreSQL","JUnit 5","Docker"],
+        color: "#00d4ff",
+      },
+      {
+        num: "02", title: "Intelligent Learning Platform", level: "EVENT-DRIVEN + AI",
+        desc: "AI cá nhân hóa lộ trình học, chatbot trợ giảng qua Spring AI + RAG, real-time quiz qua WebSocket, event pipeline qua Kafka.",
+        stack: ["Spring AI","Kafka","WebSocket","Redis","Docker Compose","CI/CD"],
+        color: "#00ff94",
+      },
+      {
+        num: "03", title: "E-Commerce Microservices", level: "DISTRIBUTED SYSTEM",
+        desc: "5 services độc lập, Saga pattern, circuit breaker, distributed tracing, SOAP integration với legacy system.",
+        stack: ["Spring Cloud","Resilience4j","Zipkin","Kubernetes","MongoDB","Kafka"],
+        color: "#7b61ff",
+      },
+    ];
+
+    // ═══ RENDER SKILLS ═══
+    const skillsGrid = document.getElementById("skillsGrid");
+    skillGroups.forEach((group, gi) => {
+      const div = document.createElement("div");
+      div.className = "reveal";
+      div.style.transitionDelay = `${gi * 0.08}s`;
+      div.innerHTML = `
+        <div class="skill-category" style="color:${group.color}">
+          <span class="icon">${group.icon}</span>${group.category}
+        </div>
+        <div class="skill-chips">
+          ${group.items.map(item => `
+            <div class="skill-chip" style="
+              background:${group.color}0a;
+              border:1px solid ${group.color}20;
+              color:var(--text);
+              --chip-color:${group.color};
+            ">${item}</div>
+          `).join("")}
+        </div>
+      `;
+      skillsGrid.appendChild(div);
+    });
+
+    // ═══ RENDER PRACTICES ═══
+    const practicesContainer = document.getElementById("practicesContainer");
+    practices.forEach(p => {
+      const span = document.createElement("span");
+      span.className = "practice-chip";
+      span.textContent = p;
+      practicesContainer.appendChild(span);
+    });
+
+    // ═══ RENDER PROJECTS ═══
+    const projectsContainer = document.getElementById("projectsContainer");
+    projects.forEach((project, i) => {
+      const div = document.createElement("div");
+      div.className = "reveal";
+      div.style.transitionDelay = `${i * 0.15}s`;
+      div.innerHTML = `
+        <div class="project-card" style="
+          background:linear-gradient(135deg,${project.color}0d,transparent);
+          border:1px solid ${project.color}15;
+          --card-color:${project.color};
+        "
+        onmouseenter="this.style.borderColor='${project.color}40'"
+        onmouseleave="this.style.borderColor='${project.color}15'"
+        >
+          <div class="top-line" style="background:linear-gradient(90deg,${project.color}60,transparent)"></div>
+          <div class="project-num" style="color:${project.color}">${project.num}</div>
+          <div>
+            <div>
+              <span class="project-title">${project.title}</span>
+              <span class="project-level" style="
+                background:${project.color}15;
+                color:${project.color};
+                border:1px solid ${project.color}30;
+              ">${project.level}</span>
+            </div>
+            <p class="project-desc">${project.desc}</p>
+            <div class="project-stack">
+              ${project.stack.map(s => `<span class="project-tag">${s}</span>`).join("")}
+            </div>
+          </div>
+        </div>
+      `;
+      projectsContainer.appendChild(div);
+    });
+
+    // ═══ SCROLL REVEAL ═══
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add("visible");
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll(".reveal").forEach(el => observer.observe(el));
+
+    // ═══ PARTICLE FIELD ═══
+    const canvas = document.getElementById("particles");
     const ctx = canvas.getContext("2d");
-    let w = canvas.width = canvas.offsetWidth;
-    let h = canvas.height = canvas.offsetHeight;
+    let W, H;
+    const mouse = { x: -1000, y: -1000 };
+    const pts = [];
 
-    particles.current = Array.from({ length: 80 }, () => ({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      r: Math.random() * 1.5 + 0.5,
-    }));
+    function resizeCanvas() {
+      W = canvas.width = canvas.offsetWidth;
+      H = canvas.height = canvas.offsetHeight;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
 
-    const draw = () => {
-      ctx.clearRect(0, 0, w, h);
-      const pts = particles.current;
+    for (let i = 0; i < 80; i++) {
+      pts.push({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+        r: Math.random() * 1.5 + 0.5,
+      });
+    }
 
+    canvas.addEventListener("mousemove", e => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    });
+
+    function drawParticles() {
+      ctx.clearRect(0, 0, W, H);
       for (let i = 0; i < pts.length; i++) {
         const p = pts[i];
         p.x += p.vx; p.y += p.vy;
-        if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
-        if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
 
-        const dx = mouse.current.x - p.x;
-        const dy = mouse.current.y - p.y;
+        const dx = mouse.x - p.x, dy = mouse.y - p.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
+        const near = dist < 150;
 
         ctx.beginPath();
-        ctx.arc(p.x, p.y, dist < 150 ? p.r * 2 : p.r, 0, Math.PI * 2);
-        ctx.fillStyle = dist < 150 ? C.accent + "88" : C.accent + "22";
+        ctx.arc(p.x, p.y, near ? p.r * 2.5 : p.r, 0, Math.PI * 2);
+        ctx.fillStyle = near ? "rgba(0,212,255,0.5)" : "rgba(0,212,255,0.12)";
         ctx.fill();
 
         for (let j = i + 1; j < pts.length; j++) {
@@ -62,696 +712,46 @@ function ParticleField() {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = C.accent + Math.floor((1 - d / 120) * 30).toString(16).padStart(2, "0");
+            const alpha = Math.floor((1 - d / 120) * 25);
+            ctx.strokeStyle = `rgba(0,212,255,${alpha / 100})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
         }
       }
-      raf.current = requestAnimationFrame(draw);
-    };
-
-    const handleMouse = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      mouse.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    };
-    const handleResize = () => { w = canvas.width = canvas.offsetWidth; h = canvas.height = canvas.offsetHeight; };
-
-    canvas.addEventListener("mousemove", handleMouse);
-    window.addEventListener("resize", handleResize);
-    draw();
-
-    return () => {
-      cancelAnimationFrame(raf.current);
-      canvas.removeEventListener("mousemove", handleMouse);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "auto" }} />;
-}
-
-// ═══════════════════ TYPING EFFECT ═══════════════════
-function TypingText({ text, delay = 0, speed = 40, style }) {
-  const [displayed, setDisplayed] = useState("");
-  const [started, setStarted] = useState(false);
-  const [showCursor, setShowCursor] = useState(true);
-
-  useEffect(() => {
-    const t = setTimeout(() => setStarted(true), delay);
-    return () => clearTimeout(t);
-  }, [delay]);
-
-  useEffect(() => {
-    if (!started) return;
-    if (displayed.length < text.length) {
-      const t = setTimeout(() => setDisplayed(text.slice(0, displayed.length + 1)), speed);
-      return () => clearTimeout(t);
-    } else {
-      const t = setTimeout(() => setShowCursor(false), 1500);
-      return () => clearTimeout(t);
+      requestAnimationFrame(drawParticles);
     }
-  }, [started, displayed, text, speed]);
+    drawParticles();
 
-  useEffect(() => {
-    if (!showCursor) return;
-    const interval = setInterval(() => setShowCursor(p => !p), 530);
-    return () => clearInterval(interval);
-  }, []);
+    // ═══ TYPING EFFECT ═══
+    const typingText = "Backend Developer — Java · Spring Boot · Microservices";
+    const typingTarget = document.getElementById("typingTarget");
+    let charIndex = 0;
 
-  return (
-    <span style={style}>
-      {displayed}
-      <span style={{ opacity: showCursor ? 1 : 0, color: C.accent, transition: "opacity 0.1s" }}>▎</span>
-    </span>
-  );
-}
+    setTimeout(() => {
+      const interval = setInterval(() => {
+        if (charIndex < typingText.length) {
+          typingTarget.textContent += typingText[charIndex];
+          charIndex++;
+        } else {
+          clearInterval(interval);
+        }
+      }, 35);
+    }, 1800);
 
-// ═══════════════════ SCROLL REVEAL ═══════════════════
-function Reveal({ children, delay = 0, direction = "up" }) {
-  const ref = useRef();
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.1 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-
-  const transforms = {
-    up: "translateY(50px)",
-    left: "translateX(-50px)",
-    right: "translateX(50px)",
-    scale: "scale(0.9)",
-  };
-
-  return (
-    <div ref={ref} style={{
-      opacity: visible ? 1 : 0,
-      transform: visible ? "none" : transforms[direction],
-      transition: `all 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
-    }}>
-      {children}
-    </div>
-  );
-}
-
-// ═══════════════════ GLITCH TEXT ═══════════════════
-function GlitchText({ children, style: s }) {
-  const [glitch, setGlitch] = useState(false);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setGlitch(true);
-      setTimeout(() => setGlitch(false), 150);
+    // ═══ GLITCH EFFECT ═══
+    const glitchEl = document.querySelector(".glitch");
+    setInterval(() => {
+      glitchEl.classList.add("active");
+      setTimeout(() => glitchEl.classList.remove("active"), 150);
     }, 4000 + Math.random() * 3000);
-    return () => clearInterval(interval);
-  }, []);
 
-  return (
-    <span style={{ position: "relative", display: "inline-block", ...s }}>
-      {children}
-      {glitch && (
-        <>
-          <span style={{
-            position: "absolute", top: -2, left: 2, color: C.accent, opacity: 0.7,
-            clipPath: "inset(20% 0 40% 0)", ...s,
-          }}>{children}</span>
-          <span style={{
-            position: "absolute", top: 2, left: -2, color: C.accent2, opacity: 0.7,
-            clipPath: "inset(50% 0 10% 0)", ...s,
-          }}>{children}</span>
-        </>
-      )}
-    </span>
-  );
-}
-
-// ═══════════════════ HEXAGON SKILL ═══════════════════
-function SkillHex({ label, color = C.accent, delay = 0 }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <Reveal delay={delay}>
-      <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          padding: "8px 18px",
-          fontSize: 13,
-          fontFamily: "'JetBrains Mono', monospace",
-          borderRadius: 4,
-          background: hovered ? `${color}18` : `${color}08`,
-          border: `1px solid ${hovered ? color + "60" : color + "20"}`,
-          color: hovered ? C.white : C.text,
-          cursor: "default",
-          transition: "all 0.3s ease",
-          boxShadow: hovered ? `0 0 15px ${color}22, inset 0 0 15px ${color}08` : "none",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {hovered && (
-          <div style={{
-            position: "absolute", top: 0, left: 0, right: 0, height: 1,
-            background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
-          }} />
-        )}
-        {label}
-      </div>
-    </Reveal>
-  );
-}
-
-// ═══════════════════ DATA ═══════════════════
-const skills = [
-  {
-    category: "LANGUAGES",
-    items: ["Java 17+", "C#", "Python", "SQL"],
-    color: C.accent,
-    icon: "⟩_",
-  },
-  {
-    category: "BACKEND",
-    items: ["Spring Boot 3", "Spring Security", "Spring Cloud", "Spring AI", "Hibernate/JPA", "ASP.NET Core"],
-    color: "#00ff94",
-    icon: "{}",
-  },
-  {
-    category: "DATABASE",
-    items: ["PostgreSQL", "MySQL", "MongoDB", "Redis"],
-    color: "#7b61ff",
-    icon: "⊞",
-  },
-  {
-    category: "MESSAGING",
-    items: ["Apache Kafka", "RabbitMQ", "WebSocket"],
-    color: "#ff6b6b",
-    icon: "⇌",
-  },
-  {
-    category: "DEVOPS",
-    items: ["Docker", "Kubernetes", "GitHub Actions", "CI/CD", "Linux"],
-    color: "#ffa64d",
-    icon: "◈",
-  },
-  {
-    category: "TESTING",
-    items: ["JUnit 5", "Mockito", "TestContainers"],
-    color: "#4dc9f6",
-    icon: "✓",
-  },
-];
-
-const practices = [
-  "Microservices", "Event-Driven", "Saga Pattern", "REST API",
-  "SOLID", "Design Patterns", "Clean Architecture", "Circuit Breaker",
-  "Distributed Tracing", "Flyway", "Swagger/OpenAPI", "SOAP/XML",
-];
-
-const projects = [
-  {
-    num: "01",
-    title: "Online Booking Platform",
-    level: "MONOLITH",
-    desc: "Hệ thống đặt lịch xử lý race condition thực tế — pessimistic/optimistic locking, transaction safety, scheduling tự động.",
-    stack: ["Spring Boot", "Spring Security", "PostgreSQL", "JUnit 5", "Docker"],
-    color: C.accent,
-    gradient: `linear-gradient(135deg, ${C.accent}15, transparent)`,
-  },
-  {
-    num: "02",
-    title: "Intelligent Learning Platform",
-    level: "EVENT-DRIVEN + AI",
-    desc: "AI cá nhân hóa lộ trình học, chatbot trợ giảng qua Spring AI + RAG, real-time quiz qua WebSocket, event pipeline qua Kafka.",
-    stack: ["Spring AI", "Kafka", "WebSocket", "Redis", "Docker Compose", "CI/CD"],
-    color: C.accent3,
-    gradient: `linear-gradient(135deg, ${C.accent3}15, transparent)`,
-  },
-  {
-    num: "03",
-    title: "E-Commerce Microservices",
-    level: "DISTRIBUTED SYSTEM",
-    desc: "5 services độc lập, Saga pattern, circuit breaker, distributed tracing, SOAP integration với legacy system.",
-    stack: ["Spring Cloud", "Resilience4j", "Zipkin", "Kubernetes", "MongoDB", "Kafka"],
-    color: C.accent2,
-    gradient: `linear-gradient(135deg, ${C.accent2}15, transparent)`,
-  },
-];
-
-const experiences = [
-  { role: "Backend Developer", company: "Diko Vina", period: "Jul 2025 — Present", active: true },
-  { role: "Java & Python Instructor", company: "FullHouseDev", period: "2024 — Present", active: true },
-  { role: "Backend Intern (.NET)", company: "FPT Information System", period: "Jan — Apr 2025", active: false },
-];
-
-// ═══════════════════ MAIN ═══════════════════
-export default function Portfolio() {
-  const [loaded, setLoaded] = useState(false);
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => { setTimeout(() => setLoaded(true), 200); }, []);
-  useEffect(() => {
-    const h = () => setScrollY(window.scrollY || 0);
-    window.addEventListener("scroll", h, { passive: true });
-    return () => window.removeEventListener("scroll", h);
-  }, []);
-
-  const pad = "clamp(24px, 8vw, 140px)";
-
-  return (
-    <div style={{ background: C.bg, color: C.text, fontFamily: "'DM Sans', sans-serif", minHeight: "100vh", fontSize: 15, lineHeight: 1.7, overflow: "hidden" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap');
-        * { margin:0; padding:0; box-sizing:border-box; }
-        html { scroll-behavior: smooth; }
-        body { overflow-x: hidden; }
-        ::selection { background: ${C.accent}33; color: ${C.white}; }
-        a { color: ${C.accent}; text-decoration: none; }
-
-        @keyframes scanline {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(100vh); }
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 1; }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-        }
-        @keyframes borderGlow {
-          0%, 100% { border-color: ${C.accent}20; }
-          50% { border-color: ${C.accent}50; }
-        }
-        @keyframes slideIn {
-          from { width: 0; }
-          to { width: 100%; }
-        }
-      `}</style>
-
-      {/* ═══ SCANLINE OVERLAY ═══ */}
-      <div style={{
-        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 100,
-        background: `repeating-linear-gradient(0deg, transparent, transparent 2px, ${C.bg}08 2px, ${C.bg}08 4px)`,
-      }} />
-
-      {/* ═══ HERO ═══ */}
-      <div style={{ minHeight: "100vh", position: "relative", display: "flex", flexDirection: "column", justifyContent: "center", padding: `0 ${pad}` }}>
-        <ParticleField />
-
-        {/* Floating grid accent */}
-        <div style={{
-          position: "absolute", top: "10%", right: "8%", width: 300, height: 300,
-          border: `1px solid ${C.accent}12`,
-          borderRadius: 4,
-          transform: `rotate(12deg) translateY(${scrollY * 0.1}px)`,
-          transition: "transform 0.1s",
-          opacity: 0.3,
-        }}>
-          <div style={{ position: "absolute", inset: 20, border: `1px solid ${C.accent2}12`, borderRadius: 4 }} />
-          <div style={{ position: "absolute", inset: 40, border: `1px solid ${C.accent3}12`, borderRadius: 4 }} />
-        </div>
-
-        <div style={{ position: "relative", zIndex: 2 }}>
-          {/* Terminal label */}
-          <div style={{
-            opacity: loaded ? 1 : 0,
-            transform: loaded ? "none" : "translateX(-20px)",
-            transition: "all 0.6s ease 0.3s",
-            fontSize: 12,
-            fontFamily: "'JetBrains Mono', monospace",
-            color: C.dim,
-            marginBottom: 24,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}>
-            <span style={{ color: C.accent3 }}>●</span>
-            <span style={{ color: C.accent }}>●</span>
-            <span style={{ color: C.accent2 }}>●</span>
-            <span style={{ marginLeft: 8 }}>~/nguyen-minh-dao</span>
-          </div>
-
-          {/* Name */}
-          <div style={{
-            opacity: loaded ? 1 : 0,
-            transform: loaded ? "none" : "translateY(40px)",
-            transition: "all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s",
-          }}>
-            <h1 style={{
-              fontFamily: "'Instrument Serif', Georgia, serif",
-              fontSize: "clamp(52px, 9vw, 110px)",
-              fontWeight: 400,
-              color: C.white,
-              lineHeight: 1,
-              marginBottom: 8,
-            }}>
-              <GlitchText>Minh</GlitchText>{" "}
-              <span style={{
-                fontStyle: "italic",
-                background: `linear-gradient(135deg, ${C.accent}, ${C.accent2})`,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}>
-                Dao
-              </span>
-            </h1>
-          </div>
-
-          {/* Typing subtitle */}
-          <div style={{
-            opacity: loaded ? 1 : 0,
-            transition: "opacity 0.6s ease 1.2s",
-            marginTop: 20,
-            fontSize: 15,
-            fontFamily: "'JetBrains Mono', monospace",
-            color: C.dim,
-          }}>
-            <span style={{ color: C.accent }}>$ </span>
-            <TypingText text="Backend Developer — Java · Spring Boot · Microservices" delay={1800} speed={30} />
-          </div>
-
-          {/* Bio */}
-          <p style={{
-            opacity: loaded ? 1 : 0,
-            transform: loaded ? "none" : "translateY(20px)",
-            transition: "all 0.8s ease 1s",
-            maxWidth: 500,
-            marginTop: 32,
-            fontSize: 15,
-            color: C.text,
-            lineHeight: 1.8,
-          }}>
-            Building production systems at Diko Vina.
-            Teaching Java & Python at{" "}
-            <a href="https://fullhousedev.com/" target="_blank" rel="noreferrer"
-              style={{ borderBottom: `1px solid ${C.accent}40` }}>
-              FullHouseDev
-            </a>.
-            <br />PTIT Engineering graduate.
-          </p>
-
-          {/* CTA buttons */}
-          <div style={{
-            opacity: loaded ? 1 : 0,
-            transition: "opacity 0.8s ease 1.4s",
-            marginTop: 40,
-            display: "flex",
-            gap: 12,
-          }}>
-            {[
-              { label: "GitHub", href: "https://github.com/minhdao-dev" },
-              { label: "LinkedIn", href: "https://linkedin.com/in/dao-nguyen-minh" },
-              { label: "Email", href: "mailto:daonguyenminh.it@gmail.com" },
-            ].map((btn, i) => (
-              <a key={btn.label} href={btn.href} target="_blank" rel="noreferrer" style={{
-                padding: "10px 24px",
-                fontSize: 12,
-                fontFamily: "'JetBrains Mono', monospace",
-                letterSpacing: 1,
-                border: `1px solid ${C.border}`,
-                borderRadius: 4,
-                color: C.text,
-                textDecoration: "none",
-                transition: "all 0.3s",
-                position: "relative",
-                overflow: "hidden",
-              }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = C.accent;
-                  e.target.style.color = C.accent;
-                  e.target.style.boxShadow = `0 0 20px ${C.accent}15`;
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.borderColor = C.border;
-                  e.target.style.color = C.text;
-                  e.target.style.boxShadow = "none";
-                }}
-              >{btn.label}</a>
-            ))}
-          </div>
-        </div>
-
-        {/* Scroll line */}
-        <div style={{
-          position: "absolute", bottom: 40, left: "50%",
-          display: "flex", flexDirection: "column", alignItems: "center",
-          opacity: loaded ? 0.4 : 0, transition: "opacity 1s ease 2s",
-        }}>
-          <div style={{
-            width: 1, height: 50,
-            background: `linear-gradient(to bottom, transparent, ${C.accent})`,
-            animation: "pulse 2s ease-in-out infinite",
-          }} />
-        </div>
-      </div>
-
-      {/* ═══ EXPERIENCE ═══ */}
-      <div style={{ padding: `80px ${pad} 100px`, position: "relative" }}>
-        <Reveal>
-          <div style={{
-            fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: 3, color: C.accent, marginBottom: 40, textTransform: "uppercase",
-          }}>
-            <span style={{ opacity: 0.4 }}>// </span>Experience
-          </div>
-        </Reveal>
-
-        {experiences.map((exp, i) => (
-          <Reveal key={i} delay={i * 0.1}>
-            <div style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "20px 0",
-              borderBottom: `1px solid ${C.border}`,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                {exp.active ? (
-                  <div style={{
-                    width: 6, height: 6, borderRadius: "50%",
-                    background: C.accent3,
-                    boxShadow: `0 0 8px ${C.accent3}88`,
-                    animation: "pulse 2s ease infinite",
-                  }} />
-                ) : <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.dim }} />}
-                <div>
-                  <div style={{ color: C.white, fontWeight: 500 }}>{exp.role}</div>
-                  <div style={{ color: C.dim, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>{exp.company}</div>
-                </div>
-              </div>
-              <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: C.dim }}>{exp.period}</div>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-
-      {/* ═══ TECH STACK ═══ */}
-      <div style={{
-        padding: `100px ${pad}`,
-        background: `linear-gradient(180deg, ${C.surface}, ${C.bg})`,
-        borderTop: `1px solid ${C.border}`,
-        position: "relative",
-      }}>
-        {/* Glow orb */}
-        <div style={{
-          position: "absolute", top: -100, right: "20%", width: 400, height: 400,
-          background: `radial-gradient(circle, ${C.accent}08, transparent 70%)`,
-          borderRadius: "50%", filter: "blur(60px)", pointerEvents: "none",
-        }} />
-
-        <Reveal>
-          <div style={{
-            fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: 3, color: C.accent, marginBottom: 48, textTransform: "uppercase",
-          }}>
-            <span style={{ opacity: 0.4 }}>// </span>Tech Stack
-          </div>
-        </Reveal>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "48px 40px", position: "relative" }}>
-          {skills.map((group, gi) => (
-            <Reveal key={group.category} delay={gi * 0.08}>
-              <div>
-                <div style={{
-                  fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-                  color: group.color, marginBottom: 14,
-                  letterSpacing: 2, display: "flex", alignItems: "center", gap: 8,
-                }}>
-                  <span style={{ opacity: 0.5 }}>{group.icon}</span>
-                  {group.category}
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {group.items.map((item, ii) => (
-                    <SkillHex key={item} label={item} color={group.color} delay={gi * 0.08 + ii * 0.03} />
-                  ))}
-                </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-
-        {/* Practices */}
-        <Reveal delay={0.3}>
-          <div style={{ marginTop: 64, paddingTop: 40, borderTop: `1px solid ${C.border}` }}>
-            <div style={{
-              fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-              color: C.dim, marginBottom: 16, letterSpacing: 2,
-            }}>
-              <span style={{ opacity: 0.4 }}>// </span>ARCHITECTURE & PRACTICES
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {practices.map((p, i) => (
-                <span key={p} style={{
-                  padding: "6px 14px", fontSize: 12,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  borderRadius: 3, color: C.dim,
-                  border: `1px dashed ${C.border}`,
-                  transition: "all 0.3s",
-                }}
-                  onMouseEnter={(e) => { e.target.style.borderColor = C.accent + "40"; e.target.style.color = C.text; }}
-                  onMouseLeave={(e) => { e.target.style.borderColor = C.border; e.target.style.color = C.dim; }}
-                >{p}</span>
-              ))}
-            </div>
-          </div>
-        </Reveal>
-      </div>
-
-      {/* ═══ PROJECTS ═══ */}
-      <div style={{ padding: `100px ${pad}`, position: "relative" }}>
-        <Reveal>
-          <div style={{
-            fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: 3, color: C.accent, marginBottom: 48, textTransform: "uppercase",
-          }}>
-            <span style={{ opacity: 0.4 }}>// </span>Projects
-          </div>
-        </Reveal>
-
-        {projects.map((project, i) => (
-          <Reveal key={i} delay={i * 0.15}>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "100px 1fr",
-                gap: 32,
-                padding: "48px 24px",
-                marginBottom: 16,
-                borderRadius: 8,
-                background: project.gradient,
-                border: `1px solid ${project.color}15`,
-                position: "relative",
-                overflow: "hidden",
-                transition: "all 0.4s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = project.color + "40";
-                e.currentTarget.style.boxShadow = `0 0 40px ${project.color}10`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = project.color + "15";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            >
-              {/* Accent line top */}
-              <div style={{
-                position: "absolute", top: 0, left: 0, width: "30%", height: 1,
-                background: `linear-gradient(90deg, ${project.color}60, transparent)`,
-              }} />
-
-              <div style={{
-                fontFamily: "'Instrument Serif', serif",
-                fontSize: 56,
-                color: project.color,
-                opacity: 0.25,
-                lineHeight: 1,
-              }}>
-                {project.num}
-              </div>
-
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10, flexWrap: "wrap" }}>
-                  <h3 style={{
-                    fontFamily: "'Instrument Serif', serif",
-                    fontSize: 26, fontWeight: 400, color: C.white,
-                  }}>
-                    {project.title}
-                  </h3>
-                  <span style={{
-                    fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
-                    padding: "3px 10px", borderRadius: 3,
-                    background: `${project.color}15`, color: project.color,
-                    border: `1px solid ${project.color}30`,
-                    letterSpacing: 1.5,
-                  }}>
-                    {project.level}
-                  </span>
-                </div>
-
-                <p style={{ color: C.text, maxWidth: 540, marginBottom: 20, lineHeight: 1.7, fontSize: 14 }}>
-                  {project.desc}
-                </p>
-
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {project.stack.map((s) => (
-                    <span key={s} style={{
-                      fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-                      padding: "3px 10px", borderRadius: 3,
-                      color: C.dim, border: `1px solid ${C.border}`,
-                    }}>
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-
-      {/* ═══ FOOTER ═══ */}
-      <div style={{
-        padding: `80px ${pad} 40px`,
-        borderTop: `1px solid ${C.border}`,
-        textAlign: "center",
-        position: "relative",
-      }}>
-        <div style={{
-          position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
-          width: 400, height: 200,
-          background: `radial-gradient(circle, ${C.accent}06, transparent 70%)`,
-          filter: "blur(40px)", pointerEvents: "none",
-        }} />
-
-        <Reveal>
-          <div style={{
-            fontFamily: "'Instrument Serif', serif",
-            fontSize: "clamp(32px, 5vw, 52px)",
-            color: C.white,
-            marginBottom: 12,
-          }}>
-            Let's{" "}
-            <span style={{
-              fontStyle: "italic",
-              background: `linear-gradient(135deg, ${C.accent}, ${C.accent2})`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}>connect</span>
-          </div>
-          <div style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 12, color: C.dim,
-          }}>
-            daonguyenminh.it@gmail.com
-          </div>
-        </Reveal>
-
-        <div style={{
-          marginTop: 60, fontSize: 11,
-          fontFamily: "'JetBrains Mono', monospace",
-          color: C.dim, opacity: 0.3,
-        }}>
-          © 2026 Nguyen Minh Dao — Built with Java spirit & pixel precision
-        </div>
-      </div>
-    </div>
-  );
-}
+    // ═══ PARALLAX FLOAT BOXES ═══
+    const floatBoxes = document.getElementById("floatBoxes");
+    window.addEventListener("scroll", () => {
+      const y = window.scrollY;
+      floatBoxes.style.transform = `rotate(12deg) translateY(${y * 0.08}px)`;
+    }, { passive: true });
+  </script>
+</body>
+</html>
